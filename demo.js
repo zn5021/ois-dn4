@@ -187,7 +187,7 @@ function preberiMeritveVitalnihZnakov() {
 						            type: 'column'
 						        },
 						        title: {
-						            text: 'Monthly Average Rainfall'
+						            text: 'Telesna temperatura'
 						        },
 						
 						        xAxis: {
