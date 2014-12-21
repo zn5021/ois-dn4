@@ -49,7 +49,9 @@ function kreirajEHRzaBolnika() {
 		                if (party.action == 'CREATE') {
 		                    $("#kreirajSporocilo").html("<span class='obvestilo label label-success fade-in'>Uspešno kreiran EHR '" + ehrId + "'.</span>");
 		                    console.log("Uspešno kreiran EHR '" + ehrId + "'.");
-		                    $("#preberiEHRid").val(ehrId);
+		                    //$("#preberiEHRid").val(ehrId);
+		                    $("#dodajVitalnoEHR").append('<option value="'+ehrId+'">'+ime+' '+ priimek+'</option>');
+		                    $("#preberiObstojeciEHR").append('<option value="'+ehrId+'">'+ime+' '+ priimek+'</option>');
 		                }
 		            },
 		            error: function(err) {
@@ -148,10 +150,10 @@ function dodajMeritveVitalnihZnakov() {
 function preberiMeritveVitalnihZnakov() {
 	sessionId = getSessionId();	
 
-	var ehrId = $("#meritveVitalnihZnakovEHRid").val();
+	var ehrId = $("#preberiObstojeciEHR").val();
 	var tip = $("#preberiTipZaVitalneZnake").val();
 
-	if (!ehrId || ehrId.trim().length == 0 || !tip || tip.trim().length == 0) {
+	if (!ehrId || ehrId.trim().length == 0) {
 		$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Prosim vnesite zahtevan podatek!");
 	} else {
 		$.ajax({
@@ -161,19 +163,66 @@ function preberiMeritveVitalnihZnakov() {
 	    	success: function (data) {
 				var party = data.party;
 				$("#rezultatMeritveVitalnihZnakov").html("<br/><span>Pridobivanje podatkov za <b>'" + tip + "'</b> bolnika <b>'" + party.firstNames + " " + party.lastNames + "'</b>.</span><br/><br/>");
-				if (tip == "telesna temperatura") {
+				
 					$.ajax({
 					    url: baseUrl + "/view/" + ehrId + "/" + "body_temperature",
 					    type: 'GET',
 					    headers: {"Ehr-Session": sessionId},
 					    success: function (res) {
+					    	var dnevi = [];
+					    	var tempX = [];
+					    	
 					    	if (res.length > 0) {
 						    	var results = "<table class='table table-striped table-hover'><tr><th>Datum in ura</th><th class='text-right'>Telesna temperatura</th></tr>";
 						        for (var i in res) {
-						            results += "<tr><td>" + res[i].time + "</td><td class='text-right'>" + res[i].temperature + " " 	+ res[i].unit + "</td>";
+						            //results += "<tr><td>" + res[i].time + "</td><td class='text-right'>" + res[i].temperature + " " 	+ res[i].unit + "</td>";
+						        dnevi.push(res[i].time);
+						        tempX.push(res[i].temperature);
 						        }
-						        results += "</table>";
-						        $("#rezultatMeritveVitalnihZnakov").append(results);
+
+							//
+						
+						    $('#temperaturaGraf').highcharts({
+						        chart: {
+						            type: 'column'
+						        },
+						        title: {
+						            text: 'Monthly Average Rainfall'
+						        },
+						
+						        xAxis: {
+						            categories: dnevi
+						        },
+						        yAxis: {
+						            min: 0,
+						            title: {
+						                text: 'Stopinj celjzija'
+						            }
+						        },
+						        tooltip: {
+						            headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+						            pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+						                '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
+						            footerFormat: '</table>',
+						            shared: true,
+						            useHTML: true
+						        },
+						        plotOptions: {
+						            column: {
+						                pointPadding: 0.2,
+						                borderWidth: 0
+						            }
+						        },
+						        series: [{
+						            name: 'Temperatura',
+						            data: tempX
+						
+						        }]
+						    });
+				
+
+
+							////////////////
 					    	} else {
 					    		$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Ni podatkov!</span>");
 					    	}
@@ -183,7 +232,7 @@ function preberiMeritveVitalnihZnakov() {
 							console.log(JSON.parse(err.responseText).userMessage);
 					    }
 					});
-				} else if (tip == "telesna teža") {
+				if (tip == "telesna teža") {
 					$.ajax({
 					    url: baseUrl + "/view/" + ehrId + "/" + "weight",
 					    type: 'GET',
@@ -253,7 +302,7 @@ function preberiMeritveVitalnihZnakov() {
 $(document).ready(function() {
 	$('#preberiObstojeciEHR').change(function() {
 		$("#preberiSporocilo").html("");
-		$("#preberiEHRid").val($(this).val());
+		preberiMeritveVitalnihZnakov();
 	});
 	$('#preberiPredlogoBolnika').change(function() {
 		$("#kreirajSporocilo").html("");
